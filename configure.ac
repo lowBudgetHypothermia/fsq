@@ -196,7 +196,7 @@ AC_SUBST(_RELEASE, [m4_esyscmd([git describe --tags | sed 's/-g[a-z0-9]\{7\}//' 
 AC_OUTPUT
 
 echo
-echo "configured ltsm:"
+echo "configured fsq:"
 echo
 echo "build fsqc and fsqapi library : yes"
 echo "build fsqd                    : ${tsmheader_and_ltsmheader_and_lapiheader}"
