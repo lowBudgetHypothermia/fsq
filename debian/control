@@ -1,0 +1,16 @@
+Source: fsq
+Section: utils
+Priority: optional
+Maintainer: Thomas Stibor <t.stibor@gsi.de>
+Build-Depends: debhelper (>= 9), autotools-dev
+Standards-Version: 3.9.5
+Homepage: https://github.com/tstibor/fsq
+Vcs-Git: git://github.com/tstibor/fsq.git
+
+Package: fsq
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, tivsm-api64 (>= 7.1.0), lustre-dev (>= 2.10), ltsm (>= 0.9)
+Description: File storage queue server, client and library
+ File storage queue server (called fsqd) implements a protocol for receiving data via socket, copy
+ data to Lustre and finally archive data on TSM server. In addition a file storage queue client
+ is provided for sending data to the file storage queue server via console commands.

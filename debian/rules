@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+DH_VERBOSE = 1
+
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_configure:
+	dh_auto_configure -- --with-lustre-headers=/usr/include/lustre
+
+override_dh_auto_install:
+	dh_auto_install -- prefix=/usr
+
+override_dh_installinit:
+	dh_installinit -p fsq --name=fsqd

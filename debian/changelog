@@ -1,0 +1,6 @@
+fsq (0.9.0) unstable; urgency=medium
+
+  * Initial FSQ server, client and library
+  * Implement FSQ protocol version 1
+
+ -- Thomas Stibor <thomas@stibor.net>  Thu, 28 Jul 2022 10:48:55 +0100
