@@ -162,7 +162,7 @@ struct fsq_action_item_t {
 	int archive_id;
 	uid_t uid;
 	gid_t gid;
-} __attribute__ ((packed));
+};
 
 int fsq_send(struct fsq_session_t *fsq_session,
 	     const enum fsq_protocol_state_t fsq_protocol_state);
