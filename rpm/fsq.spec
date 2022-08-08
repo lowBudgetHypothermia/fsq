@@ -26,7 +26,7 @@ is provided for sending data to the file storage queue server via console comman
 %autosetup -n %{name}-%{version}-%{release}
 
 %build
-./configure %{?configure_flags} --mandir=%{_mandir} --libdir=%{_libdir} --bindir=%{_bindir} --sbindir=%{_sbindir}
+./configure %{?configure_flags} --mandir=%{_mandir} --libdir=%{_libdir} --bindir=%{_bindir} --sbindir=%{_sbindir} --enable-fsqd
 make %{?_smp_mflags}
 
 %install
@@ -59,6 +59,9 @@ install -m 600 debian/fsqd.default %{buildroot}/%{_etcdir}/default/fsqd
 rm -rf %{buildroot}
 
 %changelog
+
+* Mon Aug 8 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.0-2
+- Refactored autoconf build system
 
 * Thu Jul 28 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.0-1
 - Initial FSQ server, client and library

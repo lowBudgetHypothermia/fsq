@@ -8,7 +8,7 @@ include /usr/share/dpkg/default.mk
 	dh $@ --with systemd
 
 override_dh_auto_configure:
-	dh_auto_configure -- --with-lustre-headers=/usr/include/lustre
+	dh_auto_configure -- --with-lustre-headers=/usr/include/lustre --enable-fsqd
 
 override_dh_auto_install:
 	dh_auto_install -- prefix=/usr
