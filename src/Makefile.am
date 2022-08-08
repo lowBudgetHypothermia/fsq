@@ -6,10 +6,10 @@ endif
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-if HAVE_TSM_LTSM_LUSTRE
+if BUILD_FSQD
     fsqd_CFLAGS = -I@LUSTRE_SRC_DIR@/lustre/include -I@LUSTRE_SRC_DIR@/lustre/include/uapi -I@TSM_SRC_DIR@/ -I@LTSM_SRC_DIR@/ -I$(top_srcdir)/src/lib
     sbin_PROGRAMS = fsqd
-    fsqd_SOURCES = fsqd.c
+    fsqd_SOURCES = fsqd.c $(top_srcdir)/src/lib/xattr.c
     fsqd_LDADD = $(top_srcdir)/src/lib/libfsqapi.a
 endif
 

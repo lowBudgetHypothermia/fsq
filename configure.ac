@@ -30,106 +30,87 @@ AC_LANG([C])
 LT_INIT
 AC_CONFIG_MACRO_DIR([m4])
 
-# Path to Lustre header files directory, needed to compile fsqd.
-AC_ARG_WITH([lustre-headers],
-	AS_HELP_STRING([--with-lustre-headers[=PATH]],[path to location of Lustre header files [default=/usr/include/lustre]]),
-	LUSTRE_SRC_DIR="$withval", LUSTRE_SRC_DIR="/usr/include/lustre")
+#  Default-disabled fsqd.
+AC_ARG_ENABLE([fsqd],
+              AS_HELP_STRING([--enable-fsqd], [enable and build fsqd]))
+AM_CONDITIONAL([BUILD_FSQD], [test "x$enable_fsqd" = "xyes"])
 
-lapiheader="no"
-AC_CHECK_FILE("$LUSTRE_SRC_DIR/lustreapi.h", [lapiheader="yes"],
-	[AC_MSG_WARN([cannot find Lustre header files, use --with-lustre-headers=PATH])])
+build_fsqd="no"
+# Fsqd build is enabled, make sure all requred header files and libraries are provided.
+if test "x$enable_fsqd" = "xyes"; then
+  # Path to Lustre header files directory, needed to compile fsqd.
+  AC_ARG_WITH([lustre-headers],
+              AS_HELP_STRING([--with-lustre-headers[=PATH]],[path to location of Lustre header files [default=/usr/include/lustre]]),
+   	      LUSTRE_SRC_DIR="$withval", LUSTRE_SRC_DIR="/usr/include/lustre")
 
-AS_IF([test "x$lapiheader" = "xyes"],
+  lapiheader="no"
+  AC_CHECK_FILE("$LUSTRE_SRC_DIR/lustreapi.h", [lapiheader="yes"],
+	        [AC_MSG_ERROR([cannot find Lustre header files, use --with-lustre-headers=PATH])])
+
+  AS_IF([test "x$lapiheader" = "xyes"],
+   	[
+       	  # We found the required Lustre source files, so let's check for Lustre API library.
+	  AC_CHECK_LIB([lustreapi],
+		       [llapi_error],
+		       [],
+		       [AC_MSG_ERROR([cannot find Lustre API library lustreapi required for fsqd, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
+                      )
+        ]
+       )
+
+  # Path to TSM src directory.
+  AC_ARG_WITH([tsm-headers], AS_HELP_STRING([--with-tsm-headers[=PATH]],[path to location of IBM TSM header files [default=/opt/tivoli/tsm/client/api/bin64/sample]]),
+	      TSM_SRC_DIR="$withval", TSM_SRC_DIR="/opt/tivoli/tsm/client/api/bin64/sample")
+
+  tsmheader="no"
+  AC_CHECK_FILE("$TSM_SRC_DIR/dsmapitd.h", [tsmheader="yes"],
+		[AC_MSG_WARN([cannot find proprietary IBM TSM header files, use --with-tsm-headers=PATH])])
+  AS_IF([test "x$tsmheader" = "xyes"],
 	[
-	# We found the required Lustre source files, so let's check for Lustre API library.
-	AC_CHECK_LIB([lustreapi],
-		 [llapi_error],
-		 [],
-		 [AC_MSG_ERROR([cannot find Lustre API library lustreapi, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
-        )
-	#
-	AC_DEFINE([HAVE_LUSTRE], [1], [define to 1 if Lustre source is available])
-	AM_CONDITIONAL([HAVE_LUSTRE], [true])
-	],
-	[
-	AM_CONDITIONAL([HAVE_LUSTRE], [false])
-	AC_MSG_WARN([cannot find Lustre API headers and/or Lustre API library])
+	  # We found the required TSM header files, so let's check for TSM API library.
+	  AC_CHECK_LIB([ApiTSM64],
+                       [dsmInitEx],
+		       [],
+		       [AC_MSG_WARN([cannot find proprietary IBM library ApiTSM64 required for , provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
+                      )
 	]
-)
+       )
 
-# Path to TSM src directory.
-AC_ARG_WITH([tsm-headers], AS_HELP_STRING([--with-tsm-headers[=PATH]],[path to location of IBM TSM header files [default=/opt/tivoli/tsm/client/api/bin64/sample]]),
-	TSM_SRC_DIR="$withval", TSM_SRC_DIR="/opt/tivoli/tsm/client/api/bin64/sample")
+  # Path to LTSM header file directory.
+  AC_ARG_WITH([ltsm-headers], AS_HELP_STRING([--with-ltsm-headers[=PATH]],[path to location of ltsmapi header files [default=/usr/include]]),
+	      LTSM_SRC_DIR="$withval", LTSM_SRC_DIR="/usr/include")
 
-tsmheader="no"
-AC_CHECK_FILE("$TSM_SRC_DIR/dsmapitd.h", [tsmheader="yes"],
-	[AC_MSG_WARN([cannot find proprietary IBM TSM header files, use --with-tsm-headers=PATH])])
-AS_IF([test "x$tsmheader" = "xyes"],
+  ltsmheader="no"
+  AC_CHECK_FILE("$LTSM_SRC_DIR/ltsmapi.h", [ltsmheader="yes"],
+		[AC_MSG_WARN([cannot find ltsmapi header files, use --with-ltsm-headers=PATH])])
+  AS_IF([test "x$ltsmheader" = "xyes"],
 	[
-	# We found the required TSM header files, so let's check for TSM API library.
-	AC_CHECK_LIB([ApiTSM64],
-		[dsmInitEx],
-		[],
-		[AC_MSG_ERROR([cannot find proprietary IBM library ApiTSM64, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
-        )
-	#
-	AC_DEFINE([HAVE_TSM], [1], [define to 1 if TSM sdk is available])
-	AM_CONDITIONAL([HAVE_TSM], [true])
-	],
-	[
-	AM_CONDITIONAL([HAVE_TSM], [false])
-	AC_MSG_WARN([cannot find TSM API headers and/or TSM API library, only fsqc and fsq library will be build])
+	  # We found the required LTSM header file, so let's check for LTSM API library.
+	  AC_CHECK_LIB([ltsmapi],
+                       [tsm_init],
+		       [],
+		       [AC_MSG_WARN([cannot find library ltsmapi, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
+                      )
 	]
-)
+       )
 
-# Path to LTSM header file directory.
-AC_ARG_WITH([ltsm-headers], AS_HELP_STRING([--with-ltsm-headers[=PATH]],[path to location of ltsmapi header files [default=/usr/include]]),
-	LTSM_SRC_DIR="$withval", LTSM_SRC_DIR="/usr/include")
+  # Check for required zlib library.
+  AC_CHECK_LIB([z], [crc32], [], [AC_MSG_ERROR([cannot find library zlib required for fsqd, install zlib package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
 
-ltsmheader="no"
-AC_CHECK_FILE("$LTSM_SRC_DIR/ltsmapi.h", [ltsmheader="yes"],
-	[AC_MSG_WARN([cannot find ltsmapi header files, use --with-ltsm-headers=PATH])])
-AS_IF([test "x$ltsmheader" = "xyes"],
-	[
-	# We found the required LTSM header file, so let's check for LTSM API library.
-	AC_CHECK_LIB([ltsmapi],
-		[tsm_init],
-		[],
-		[AC_MSG_ERROR([cannot find library ltsmapi, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
-        )
-	#
-	AC_DEFINE([HAVE_LTSM], [1], [define to 1 if ltsmapi is available])
-	AM_CONDITIONAL([HAVE_LTSM], [true])
-	],
-	[
-	AM_CONDITIONAL([HAVE_LTSM], [false])
-	AC_MSG_WARN([cannot find ltsmapi headers and/or library, only fsqc and fsq library will be build])
-	]
-)
+  # Check for required xattr library, otherwise we cannot get Lustre stripe information and FSQ library.
+  AC_CHECK_LIB([attr], [fgetxattr], [], [AC_MSG_ERROR([cannot find library libattr required for fsqd, install libattr package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
 
-tsmheader_and_ltsmheader_and_lapiheader="no"
-AS_IF([test "x$lapiheader" = "xyes" && test "x$ltsmheader" = "xyes" && test "x$tsmheader" = "xyes"],
-      [
-      AC_DEFINE([HAVE_TSM_LTSM_LUSTRE], [1], [define to 1 if Lustre and ltsm API's are available])
-      AM_CONDITIONAL([HAVE_TSM_LTSM_LUSTRE], [true])
-      tsmheader_and_ltsmheader_and_lapiheader="yes"
-      ],
-      [
-      AM_CONDITIONAL([HAVE_TSM_LTSM_LUSTRE], [false])
-      ]
-)
+  # Check for required uuid library.
+  AC_CHECK_LIB([uuid], [uuid_clear], [], [AC_MSG_ERROR([cannot find library uuid required for fsqd, install uuid package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
+
+
+  build_fsqd="yes"
+  AC_DEFINE([BUILD_FSQD], [1], [define if enabling fsqd build])
+  AM_CONDITIONAL([BUILD_FSQD], [true])
+fi
 
 # Checks for other libraries.
 AC_CHECK_LIB([m],[ceil])
-
-# Check for required zlib library.
-AC_CHECK_LIB([z], [crc32], [], [AC_MSG_ERROR([cannot find library zlib, install zlib package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
-
-# Check for required xattr library, otherwise we cannot get Lustre stripe information and FSQ library.
-AC_CHECK_LIB([attr], [fgetxattr], [], [AC_MSG_ERROR([cannot find library libattr, install libattr package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
-
-# Check for required uuid library.
-AC_CHECK_LIB([uuid], [uuid_clear], [], [AC_MSG_ERROR([cannot find library uuid, install uuid package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h stdint.h stdlib.h string.h strings.h sys/param.h sys/time.h unistd.h pthread.h float.h attr/xattr.h arpa/inet.h limits.h netdb.h netinet/in.h sys/socket.h uuid/uuid.h])
@@ -143,8 +124,13 @@ AC_SEARCH_LIBS(pthread_create, pthread)
 
 #  Default-disabled tests.
 AC_ARG_ENABLE([tests],
-    AS_HELP_STRING([--enable-tests], [enable and build tests]))
+              AS_HELP_STRING([--enable-tests], [enable and build tests]))
 AM_CONDITIONAL([TESTS], [test "x$enable_tests" = "xyes"])
+
+# enable_tests="no"
+# Tests can be build only when building fsqd.
+AS_IF([test "x$enable_tests" = "xyes" && test "x$build_fsqd" = "xno"],
+      [AC_MSG_ERROR([cannot build tests without fsqd, use --enable-fsqd and --enable-tests together])])
 
 # Enable measurements when tests are enabled.
 if test "x$enable_tests" = "xyes"; then
@@ -199,6 +185,6 @@ echo
 echo "configured fsq:"
 echo
 echo "build fsqc and fsqapi library : yes"
-echo "build fsqd                    : ${tsmheader_and_ltsmheader_and_lapiheader}"
+echo "build fsqd                    : ${build_fsqd}"
 echo "build test suite              : ${enable_tests}"
 echo

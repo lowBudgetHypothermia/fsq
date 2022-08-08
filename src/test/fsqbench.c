@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include "fsqapi.h"
 #include "common.h"
+#include "util.h"
 #include "test_utils.h"
 #include "measurement.h"
 

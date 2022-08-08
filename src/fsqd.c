@@ -38,6 +38,7 @@
 #include "fsqapi.h"
 #include "xattr.h"
 #include "queue.h"
+#include "util.h"
 
 #define N_THREADS_SOCK_DEFAULT	4
 #define N_THREADS_SOCK_MAX	64

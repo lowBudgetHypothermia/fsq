@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <errno.h>
-#include <zlib.h>
 #include "log.h"
 
 #ifndef DEFAULT_FSNAME
@@ -120,10 +119,5 @@ struct kv_opt {
 ssize_t read_size(int fd, void *ptr, size_t n);
 ssize_t write_size(int fd, const void *ptr, size_t n);
 int parse_conf(const char *filename, struct kv_opt *kv_opt);
-int crc32file(const char *filename, uint32_t *crc32result);
-void login_init(struct login_t *login, const char *servername,
-                const char *node, const char *password,
-                const char *owner, const char *platform,
-                const char *fsname, const char *fstype);
 
 #endif	/* COMMON_H */

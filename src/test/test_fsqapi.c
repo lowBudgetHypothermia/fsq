@@ -28,6 +28,7 @@
 #include "common.h"
 #include "fsqapi.c"
 #include "xattr.h"
+#include "util.h"
 #include "test_utils.h"
 
 #define NODE			"polaris"
