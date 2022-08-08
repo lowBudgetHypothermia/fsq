@@ -127,7 +127,7 @@ struct fsq_info_t {
 };
 
 struct fsq_data_t {
-	size_t size;
+	uint64_t size;
 };
 
 struct fsq_error_t {
