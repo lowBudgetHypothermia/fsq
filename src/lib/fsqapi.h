@@ -144,7 +144,7 @@ struct fsq_packet_t {
 		struct fsq_info_t fsq_info;
 		struct fsq_data_t fsq_data;
 	};
-};
+} __attribute__ ((packed, aligned(4)));
 
 struct fsq_session_t {
 	struct fsq_packet_t fsq_packet;

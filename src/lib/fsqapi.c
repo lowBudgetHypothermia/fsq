@@ -25,8 +25,30 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <byteswap.h>
 #include "fsqapi.h"
 #include "log.h"
+
+void fsq_packet_endian_swap(struct fsq_packet_t *fsq_packet)
+{
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	return;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	const enum fsq_protocol_state_t state = fsq_packet->state;
+	fsq_packet->fsq_error.rc = bswap_32(fsq_packet->fsq_error.rc);
+	fsq_packet->state = bswap_32(fsq_packet->state);
+
+	if (state & FSQ_CONNECT)
+		fsq_packet->fsq_login.port = bswap_32(fsq_packet->fsq_login.port);
+	else if (state & FSQ_OPEN)
+		fsq_packet->fsq_info.fsq_storage_dest =
+			bswap_32(fsq_packet->fsq_info.fsq_storage_dest);
+	else if (state & (FSQ_DATA))
+		fsq_packet->fsq_data.size = bswap_64(fsq_packet->fsq_data.size);
+#else
+#error unsupported endianness
+#endif
+}
 
 int fsq_send(struct fsq_session_t *fsq_session,
 	     enum fsq_protocol_state_t fsq_protocol_state)
@@ -39,8 +61,13 @@ int fsq_send(struct fsq_session_t *fsq_session,
 
 	fsq_session->fsq_packet.ver = FSQ_PROTOCOL_VER;
 	fsq_session->fsq_packet.state = fsq_protocol_state;
+
+	fsq_packet_endian_swap(&(fsq_session->fsq_packet));
+
 	bytes_send = write_size(fsq_session->fd, &fsq_session->fsq_packet,
 				sizeof(struct fsq_packet_t));
+
+	fsq_packet_endian_swap(&(fsq_session->fsq_packet));
 	CT_DEBUG("[fd=%d] fsq_send (%zd, %zd), "
 		 "ver: %s, "
 		 "state: '%s' = 0x%.4X, "
@@ -78,6 +105,9 @@ int fsq_recv(struct fsq_session_t *fsq_session,
 	bytes_recv = read_size(fsq_session->fd,
 			       &fsq_session->fsq_packet,
 			       sizeof(struct fsq_packet_t));
+
+	fsq_packet_endian_swap(&(fsq_session->fsq_packet));
+
 	CT_DEBUG("[fd=%d] fsq_recv (%zd, %zd), "
 		 "ver: (%s, %s), "
 		 "state: ('%s' = 0x%.4X, '%s' = 0x%.4X), "
@@ -256,18 +286,24 @@ ssize_t fsq_fwrite(const void *ptr, size_t size, size_t nmemb,
 	ssize_t bytes_written;
 
 	fsq_session->fsq_packet.fsq_data.size = size * nmemb;
-
+	/* Note inside fsq_send the endianess is changed to little endian
+	   when on big endian architecture */
 	rc = fsq_send(fsq_session, FSQ_DATA);
 	if (rc) {
 		close(fsq_session->fd);
 		return rc;
 	}
+	/* If we are on big endian architecture we have to convert little
+	   endian (changed above) back to big endian. */
+	fsq_packet_endian_swap(&fsq_session->fsq_packet);
 
 	bytes_written = write_size(fsq_session->fd, ptr,
 				   fsq_session->fsq_packet.fsq_data.size);
 	CT_DEBUG("[fd=%d] write size %zd, expected size %zd",
 		 fsq_session->fd, bytes_written,
-		 fsq_session->fsq_packet.fsq_data.size);
+		 __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ?
+		 fsq_session->fsq_packet.fsq_data.size :
+		 bswap_64(fsq_session->fsq_packet.fsq_data.size));
 
 	rc = fsq_recv(fsq_session, (FSQ_DATA | FSQ_REPLY));
 	if (rc) {
