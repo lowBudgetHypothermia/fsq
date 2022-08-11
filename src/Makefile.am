@@ -9,7 +9,7 @@ AUTOMAKE_OPTIONS = subdir-objects
 if BUILD_FSQD
     fsqd_CFLAGS = -I@LUSTRE_SRC_DIR@/lustre/include -I@LUSTRE_SRC_DIR@/lustre/include/uapi -I@TSM_SRC_DIR@/ -I@LTSM_SRC_DIR@/ -Ilib
     sbin_PROGRAMS = fsqd
-    fsqd_SOURCES = fsqd.c lib/xattr.c
+    fsqd_SOURCES = fsqd.c
     fsqd_LDADD = lib/libfsqapi.a
 endif
 
