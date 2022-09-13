@@ -60,6 +60,9 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Tue Sep 13 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.0-7
+- Fix unaligned pointer
+
 * Mon Aug 8 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.0-2
 - Refactored autoconf build system
 

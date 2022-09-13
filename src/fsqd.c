@@ -820,9 +820,13 @@ static int client_authenticate(struct fsq_session_t *fsq_session,
 {
 	int rc;
 	char servername[MAX_OPTIONS_LENGTH + 1] = {0};
+	struct fsq_login_t fsq_login;
+
+	memcpy(&fsq_login, &fsq_session->fsq_packet.fsq_login,
+	       sizeof(fsq_login));
 
 	/* Verify node exists in identmap file. */
-	rc = identmap_entry(&fsq_session->fsq_packet.fsq_login,
+	rc = identmap_entry(&fsq_login,
 			    servername,
 			    archive_id, uid, gid);
 	CT_DEBUG("[rc=%d] identmap_entry", rc);
