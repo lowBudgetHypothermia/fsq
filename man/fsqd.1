@@ -1,8 +1,8 @@
-.TH ltsmfsq 1 "July 2021" TSM "user utilities"
+.TH fsqd 1 "July 2021" TSM "user utilities"
 .SH NAME
-ltsmfsq \- Daemon that receives data via socket communication, copies data to a Lustre file system and finally archive data on TSM server.
+fsqd \- File storage queue server daemon that receives data via socket communication, copies data to a Lustre file system and finally archives data on TSM server.
 .SH SYNOPSIS
-ltsmfsq [\fIOPTION\fR]... LUSTRE_MOUNT_POINT
+fsqd [\fIOPTION\fR]... LUSTRE_MOUNT_POINT
 .SH DESCRIPTION
 .SS
 .BR OPTIONS:
@@ -37,7 +37,7 @@ Read conf \fIFILE\fR with options: \fIlocalfs\fR, \fIidentmap\fR, \fIport\fR, \f
 Syntax in conf \fIFILE\fR is \fIoption\fR \fIvalue\fR where separators are whitespace(s) and tabulator(s). The character # is treated as a comment and strings after character # are ignored.
 .TP
 .BR \-v ", " \-\-verbose =\fIerror\fR|\fIwarn\fR|\fImessage\fR|\fIinfo\fR|\fIdebug\fR
-Causes ltsmfsq to be more verbose in printing messages. Default is \fImessage\fR.
+Causes fsqd to be more verbose in printing messages. Default is \fImessage\fR.
 .TP
 .BR \-h ", " \-\-help
 Display help and exit.
@@ -47,10 +47,10 @@ Display help and exit.
 Directory where a Lustre filesystem is mounted at. This filesystem needs to have HSM functionality enabled. Note, the TSM filespace name is set to the LUSTRE_MOUNT_POINT.
 
 .SH REPORTING BUGS
-Please report bugs to <http://github.com/tstibor/ltsm/issues>
+Please report bugs to <http://github.com/tstibor/fsq/issues>
 
 .SH COPYRIGHT
-Copyright \(co 2021 GSI Helmholtz Centre for Heavy Ion Research
+Copyright \(co 2021-2022 GSI Helmholtz Centre for Heavy Ion Research
 .br
 License GPLv2: GNU GPL version 2 <https://www.gnu.org/licenses/>.
 .br
@@ -58,4 +58,4 @@ This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 
 .SH SEE ALSO
-Github project at <http://github.com/tstibor/ltsm>
+Github project at <http://github.com/tstibor/fsq>
