@@ -20,14 +20,13 @@
 #define FSQAPI_H
 
 #if HAVE_CONFIG_H
-#include <config.h>
-#else
-#error "Missing autoconf generated config.h file"
+#include "config.h"
 #endif
 
 #include <limits.h>
 #include "common.h"
 
+#define FSQ_PROTOCOL_VER        1
 #define FSQ_PORT_DEFAULT        7625
 
 #define XATTR_FSQ_PREFIX	"user.fsq"

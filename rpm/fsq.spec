@@ -60,6 +60,10 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Tue Sep 20 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.1-1
+- Build static and shared libraries
+- Package required header files
+
 * Tue Sep 13 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.0-7
 - Fix unaligned pointer
 
