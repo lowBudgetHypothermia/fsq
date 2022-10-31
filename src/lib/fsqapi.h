@@ -78,7 +78,7 @@ do {								\
 	fsq_session.fsq_packet.fsq_error.rc = rc;		\
 	snprintf(fsq_session.fsq_packet.fsq_error.strerror,	\
 		 FSQ_MAX_ERRMSG_LENGTH, __VA_ARGS__);		\
-	CT_ERROR(rc, __VA_ARGS__);				\
+	LOG_ERROR(rc, __VA_ARGS__);				\
 } while (0);
 
 enum fsq_action_state_t {

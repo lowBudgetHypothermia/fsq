@@ -264,11 +264,11 @@ static void *perform_task(void *thread_data)
 
 		rc = fsq_fdopen(opt.o_fsname, fpath, NULL, opt.o_storage_dest,
 				session);
-		CT_DEBUG("[rc=%d] fsq_fopen '%s' '%s' %p",
+		LOG_DEBUG("[rc=%d] fsq_fopen '%s' '%s' %p",
 			 rc, opt.o_fsname, fpath, session);
 		if (rc)
 			goto cleanup;
-		CT_INFO("[rc=%d] fsq_fopen '%s' '%s' %p",
+		LOG_INFO("[rc=%d] fsq_fopen '%s' '%s' %p",
 			rc, opt.o_fsname, fpath, session);
 
 		ssize_t twritten = 0; /* Total written. */
@@ -284,10 +284,10 @@ static void *perform_task(void *thread_data)
 				goto cleanup;
 
 			twritten += cwritten;
-			CT_DEBUG("fsq_fwrite %lu %lu %lu",
+			LOG_DEBUG("fsq_fwrite %lu %lu %lu",
 				 buf_size, cwritten, twritten);
 			if (opt.o_wdelay) {
-				CT_DEBUG("sleep %u", opt.o_wdelay);
+				LOG_DEBUG("sleep %u", opt.o_wdelay);
 				nanosleep(&(struct timespec){opt.o_wdelay, 0}, NULL);
 			}
 			crc32sum_buf = crc32(crc32sum_buf, buf, cwritten);
@@ -298,11 +298,11 @@ static void *perform_task(void *thread_data)
 		}
 
 		rc = fsq_fclose(session);
-		CT_DEBUG("[rc=%d] fsq_fclose '%s' '%s' crc32 0x%08x %p",
+		LOG_DEBUG("[rc=%d] fsq_fclose '%s' '%s' crc32 0x%08x %p",
 			 rc, opt.o_fsname, fpath, crc32sum_buf, session);
 		if (rc)
 			goto cleanup;
-		CT_INFO("[rc=%d] fsq_fclose '%s' '%s' crc32 0x%08x %p",
+		LOG_INFO("[rc=%d] fsq_fclose '%s' '%s' crc32 0x%08x %p",
 			rc, opt.o_fsname, fpath, crc32sum_buf, session);
 		crc32sum_buf = 0;
 	}
@@ -327,7 +327,7 @@ static int create_rnd_fnames(void)
 
 	fpaths = calloc(opt.o_nfiles, sizeof(char *));
 	if (!fpaths) {
-		CT_ERROR(errno, "malloc");
+		LOG_ERROR(errno, "malloc");
 		return -ENOMEM;
 	}
 
@@ -372,13 +372,13 @@ static int run_threads(void)
 	threads = calloc(opt.o_nthreads, sizeof(pthread_t));
 	if (threads == NULL) {
 		rc = -errno;
-		CT_ERROR(rc, "malloc");
+		LOG_ERROR(rc, "malloc");
 		return rc;
 	}
 
 	rc = pthread_attr_init(&attr);
 	if (rc) {
-		CT_ERROR(rc, "pthread_attr_init failed");
+		LOG_ERROR(rc, "pthread_attr_init failed");
 		goto cleanup;
 	}
 
@@ -388,26 +388,26 @@ static int run_threads(void)
 		rc = pthread_create(&threads[n], &attr, perform_task, &fsq_sessions[n]);
 
 		if (rc)
-			CT_WARN("[rc=%d] pthread_create failed thread '%d'", rc, n);
+			LOG_WARN("[rc=%d] pthread_create failed thread '%d'", rc, n);
 		else {
 			snprintf(thread_name, sizeof(thread_name),
 				 "fsqbench/%d", n);
 			pthread_setname_np(threads[n], thread_name);
-			CT_INFO("created thread '%s'", thread_name);
+			LOG_INFO("created thread '%s'", thread_name);
 		}
 	}
 
 	rc = pthread_attr_destroy(&attr);
 	if (rc)
-		CT_ERROR(rc, "pthread_attr_destroy");
+		LOG_ERROR(rc, "pthread_attr_destroy");
 
 	void *status = NULL;
 	for (uint16_t n = 0; n < opt.o_nthreads; n++) {
 		rc = pthread_join(threads[n], &status);
 		if (rc)
-			CT_WARN("[rc=%d] pthread_join failed thread '%d'", rc, n);
+			LOG_WARN("[rc=%d] pthread_join failed thread '%d'", rc, n);
 		else
-			CT_INFO("[rc=%d] pthread_join thread '%d'", rc, n);
+			LOG_INFO("[rc=%d] pthread_join thread '%d'", rc, n);
 	}
 
 	return rc;
@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
 	api_msg_set_level(opt.o_verbose);
 	rc = parseopts(argc, argv);
 	if (rc) {
-		CT_WARN("try '%s --help' for more information", argv[0]);
+		LOG_WARN("try '%s --help' for more information", argv[0]);
 		return -EINVAL;
 	}
 
@@ -438,7 +438,7 @@ int main(int argc, char *argv[])
 		goto cleanup;
 
 	if (opt.o_nthreads > opt.o_nfiles) {
-		CT_WARN("number of threads > num of files, reducing number of "
+		LOG_WARN("number of threads > num of files, reducing number of "
 			"threads to '%d'", opt.o_nfiles);
 		opt.o_nthreads = opt.o_nfiles;
 	}
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
 	fsq_sessions = calloc(opt.o_nthreads, sizeof(struct fsq_session_t));
 	if (!fsq_sessions) {
 		rc = -ENOMEM;
-		CT_ERROR(rc, "calloc");
+		LOG_ERROR(rc, "calloc");
 		goto cleanup;
 	}
 
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
 	for (int n = 0; n < opt.o_nthreads; n++) {
 		rc = fsq_fconnect(&fsq_login, &fsq_sessions[n]);
 		if (rc) {
-			CT_ERROR(fsq_sessions[n].fsq_packet.fsq_error.rc, "%s",
+			LOG_ERROR(fsq_sessions[n].fsq_packet.fsq_error.rc, "%s",
 				 fsq_sessions[n].fsq_packet.fsq_error.strerror);
 			goto cleanup;
 		}
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
 
 	/* Perform fsq_fopen(...), fsq_fwrite(...) and fsq_fclose(...). */
 	rc = run_threads();
-	CT_DEBUG("[rc=%d] run_threads", rc);
+	LOG_DEBUG("[rc=%d] run_threads", rc);
 	if (rc)
 		goto cleanup;
 

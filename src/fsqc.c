@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 	api_msg_set_level(opt.o_verbose);
 	rc = parseopts(argc, argv);
 	if (rc) {
-		CT_WARN("try '%s --help' for more information", argv[0]);
+		LOG_WARN("try '%s --help' for more information", argv[0]);
 		return -EINVAL;
 	}
 
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 	struct fsq_login_t fsq_login;
 	rc = fsq_init(&fsq_login, opt.o_node, opt.o_password, opt.o_servername);
 	if (rc) {
-		CT_ERROR(rc, "fsq_init failed");
+		LOG_ERROR(rc, "fsq_init failed");
 		return rc;
 	}
 
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 
 	rc = fsq_fconnect(&fsq_login, &fsq_session);
 	if (rc) {
-		CT_ERROR(rc, "fsq_connect failed");
+		LOG_ERROR(rc, "fsq_connect failed");
 		return rc;
 	}
 
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 		file = fopen(filename, "rb");
 		if (!file) {
 			rc = -errno;
-			CT_ERROR(rc, "fopen '%s' failed", filename);
+			LOG_ERROR(rc, "fopen '%s' failed", filename);
 			goto cleanup;
 		}
 	}
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 	rc = fsq_fdopen(opt.o_fsname, opt.o_fpath, NULL, opt.o_storage_dest,
 			&fsq_session);
 	if (rc) {
-		CT_ERROR(rc, "fsq_fdopen '%s'", opt.o_fpath);
+		LOG_ERROR(rc, "fsq_fdopen '%s'", opt.o_fpath);
 		goto cleanup;
 	}
 
@@ -317,14 +317,14 @@ int main(int argc, char *argv[])
 		size = fread(buf, 1, BUF_LENGTH, file);
 		if (ferror(file)) {
 			rc = -EIO;
-			CT_ERROR(rc, "fread failed");
+			LOG_ERROR(rc, "fread failed");
 			break;
 		}
 		if (size == 0)
 			break;
 		rc = fsq_fwrite(buf, 1, size, &fsq_session);
 		if (rc < 0) {
-			CT_ERROR(rc, "fsq_fwrite failed");
+			LOG_ERROR(rc, "fsq_fwrite failed");
 			break;
 		}
 	} while (!feof(file));
@@ -336,11 +336,11 @@ cleanup:
 	fsq_fdisconnect(&fsq_session);
 
 	if (rc)
-		CT_ERROR(rc, "failed sending file '%s' with fpath '%s' to FSQ server '%s'\n",
+		LOG_ERROR(rc, "failed sending file '%s' with fpath '%s' to FSQ server '%s'\n",
 			 filename, opt.o_fpath, opt.o_servername);
 
 	else
-		CT_MESSAGE("successfully sent file '%s' with fpath '%s' to FSQ server '%s'\n",
+		LOG_MESSAGE("successfully sent file '%s' with fpath '%s' to FSQ server '%s'\n",
 			   filename, opt.o_fpath, opt.o_servername);
 
 	return rc;

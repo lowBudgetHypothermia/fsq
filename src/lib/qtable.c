@@ -123,7 +123,7 @@ dsInt16_t insert_qtable(struct qtable_t *qtable,
 	struct object_t *insobj;
 	insobj = calloc(1, sizeof(struct object_t));
 	if (insobj == NULL) {
-		CT_ERROR(errno, "calloc failed");
+		LOG_ERROR(errno, "calloc failed");
 		return DSM_RC_UNSUCCESSFUL;
 	}
 	setup_object(insobj, qra_data);

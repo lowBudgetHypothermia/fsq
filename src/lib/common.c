@@ -115,7 +115,7 @@ int parse_conf(const char *filename, struct kv_opt *kv_opt)
 
 	file = fopen(filename, "r");
 	if (!file) {
-		CT_ERROR(errno, "fopen failed on '%s'", filename);
+		LOG_ERROR(errno, "fopen failed on '%s'", filename);
 		return -errno;
 	}
 
@@ -123,17 +123,17 @@ int parse_conf(const char *filename, struct kv_opt *kv_opt)
 	while ((nread = getline(&line, &len, file)) != -1) {
 		rc = parse_line(line, kv_opt);
 		if (rc == -EINVAL)
-			CT_WARN("malformed option '%s' in conf file '%s'",
+			LOG_WARN("malformed option '%s' in conf file '%s'",
 				line, filename);
 		else if (rc == -ENOMEM) {
-			CT_ERROR(rc, "realloc");
+			LOG_ERROR(rc, "realloc");
 			goto cleanup;
 		}
 	}
 
 	if (errno) {
 		rc = -errno;
-		CT_ERROR(errno, "getline failed");
+		LOG_ERROR(errno, "getline failed");
 	}
 
 cleanup:

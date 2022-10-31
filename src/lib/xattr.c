@@ -99,7 +99,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      (uint32_t *)&fsq_action_state, sizeof(uint32_t), 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_STATE);
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_STATE);
 		goto out;
 	}
 
@@ -107,7 +107,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      (int *)&archive_id, sizeof(int), 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_ARCHIVE_ID);
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_ARCHIVE_ID);
 		goto out;
 	}
 
@@ -115,7 +115,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      (char *)fsq_info->fs, DSM_MAX_FSNAME_LENGTH, 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_FS);
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_FS);
 		goto out;
 	}
 
@@ -123,7 +123,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      (char *)fsq_info->fpath, PATH_MAX_COMPAT, 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_FPATH);
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_FPATH);
 		goto out;
 	}
 
@@ -131,7 +131,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      (char *)fsq_info->desc, DSM_MAX_DESCR_LENGTH, 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_DESC);
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local, XATTR_FSQ_DESC);
 		goto out;
 	}
 
@@ -140,7 +140,7 @@ int xattr_set_fsq(const char *fpath_local,
 		      sizeof(enum fsq_storage_dest_t), 0);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fpath_local,
+		LOG_ERROR(rc, "setxattr '%s %s'", fpath_local,
 			 XATTR_FSQ_STOR_DEST);
 	}
 
@@ -161,7 +161,7 @@ int xattr_update_fsq_state(struct fsq_action_item_t *fsq_action_item,
 	pthread_mutex_unlock(&xattr_mutex);
 	if (rc < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "setxattr '%s %s'", fsq_action_item->fpath_local,
+		LOG_ERROR(rc, "setxattr '%s %s'", fsq_action_item->fpath_local,
 			 XATTR_FSQ_STATE);
 	} else
 		fsq_action_item->fsq_action_state = fsq_action_state;

@@ -11,7 +11,7 @@ int crc32file(const char *filename, uint32_t *crc32result)
 	file = fopen(filename, "r");
 	if (file == NULL) {
 		rc = -errno;
-		CT_ERROR(rc, "fopen failed on '%s'", filename);
+		LOG_ERROR(rc, "fopen failed on '%s'", filename);
 
 		return rc;
 	}
@@ -20,7 +20,7 @@ int crc32file(const char *filename, uint32_t *crc32result)
 		cur_read = fread(buf, 1, TSM_BUF_LENGTH, file);
 		if (ferror(file)) {
 			rc = -EIO;
-			CT_ERROR(rc, "fread failed on '%s'", filename);
+			LOG_ERROR(rc, "fread failed on '%s'", filename);
 			break;
 		}
 		crc32sum = crc32(crc32sum, (const unsigned char *)buf,
@@ -33,7 +33,7 @@ int crc32file(const char *filename, uint32_t *crc32result)
 	rc_minor = fclose(file);
 	if (rc_minor) {
 		rc_minor = -errno;
-		CT_ERROR(rc_minor, "fclose failed on '%s'", filename);
+		LOG_ERROR(rc_minor, "fclose failed on '%s'", filename);
 
 		return rc_minor;
 	}
@@ -56,7 +56,7 @@ void login_init(struct login_t *login, const char *servername,
         if (s_arg_len < MAX_OPTIONS_LENGTH)
                 snprintf(login->options, s_arg_len, "-se=%s", servername);
         else
-                CT_WARN("Option parameter \'-se=%s\' is larger than "
+                LOG_WARN("Option parameter \'-se=%s\' is larger than "
                         "MAX_OPTIONS_LENGTH: %d and is ignored\n",
                         servername, MAX_OPTIONS_LENGTH);
 

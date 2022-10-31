@@ -68,7 +68,7 @@ int fsq_send(struct fsq_session_t *fsq_session,
 				sizeof(struct fsq_packet_t));
 
 	fsq_packet_endian_swap(&(fsq_session->fsq_packet));
-	CT_DEBUG("[fd=%d] fsq_send (%zd, %zd), "
+	LOG_DEBUG("[fd=%d] fsq_send (%zd, %zd), "
 		 "ver: %s, "
 		 "state: '%s' = 0x%.4X, "
 		 "error: %d, errstr: '%s'",
@@ -81,12 +81,12 @@ int fsq_send(struct fsq_session_t *fsq_session,
 		 fsq_session->fsq_packet.fsq_error.strerror);
 	if (bytes_send < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "bytes_send < 0");
+		LOG_ERROR(rc, "bytes_send < 0");
 		goto out;
 	}
 	if ((size_t)bytes_send != sizeof(struct fsq_packet_t)) {
 		rc = -EPROTO;
-		CT_ERROR(rc, "bytes_send != sizeof(struct fsq_packet_t)");
+		LOG_ERROR(rc, "bytes_send != sizeof(struct fsq_packet_t)");
 	}
 
 out:
@@ -108,7 +108,7 @@ int fsq_recv(struct fsq_session_t *fsq_session,
 
 	fsq_packet_endian_swap(&(fsq_session->fsq_packet));
 
-	CT_DEBUG("[fd=%d] fsq_recv (%zd, %zd), "
+	LOG_DEBUG("[fd=%d] fsq_recv (%zd, %zd), "
 		 "ver: (%s, %s), "
 		 "state: ('%s' = 0x%.4X, '%s' = 0x%.4X), "
 		 "error: %d, errstr: '%s'",
@@ -124,12 +124,12 @@ int fsq_recv(struct fsq_session_t *fsq_session,
 		 fsq_session->fsq_packet.fsq_error.strerror);
 	if (bytes_recv < 0) {
 		rc = -errno;
-		CT_ERROR(rc, "bytes_recv < 0");
+		LOG_ERROR(rc, "bytes_recv < 0");
 		return rc;
 	}
 	if (bytes_recv != sizeof(struct fsq_packet_t)) {
 		rc = -EPROTO;
-		CT_ERROR(rc, "bytes_recv != sizeof(struct fsq_packet_t)");
+		LOG_ERROR(rc, "bytes_recv != sizeof(struct fsq_packet_t)");
 		return rc;
 	}
 
@@ -137,7 +137,7 @@ int fsq_recv(struct fsq_session_t *fsq_session,
 	if (!(fsq_session->fsq_packet.state == (fsq_protocol_state) ||
 	      fsq_session->fsq_packet.state & (fsq_protocol_state))) {
 		rc = -EPROTO;
-		CT_ERROR(rc, "fsq protocol error");
+		LOG_ERROR(rc, "fsq protocol error");
 	}
 
 	return rc;
@@ -173,7 +173,7 @@ int fsq_fconnect(struct fsq_login_t *fsq_login, struct fsq_session_t *fsq_sessio
 	hostent = gethostbyname(fsq_login->hostname);
 	if (!hostent) {
 		rc = -h_errno;
-		CT_ERROR(rc, "%s", hstrerror(h_errno));
+		LOG_ERROR(rc, "%s", hstrerror(h_errno));
 		goto out;
 	}
 
@@ -181,7 +181,7 @@ int fsq_fconnect(struct fsq_login_t *fsq_login, struct fsq_session_t *fsq_sessio
         fsq_session->fd = socket(AF_INET, SOCK_STREAM, 0);
         if (fsq_session->fd < 0) {
                 rc = -errno;
-                CT_ERROR(rc, "socket");
+                LOG_ERROR(rc, "socket");
                 goto out;
         }
 
@@ -190,13 +190,13 @@ int fsq_fconnect(struct fsq_login_t *fsq_login, struct fsq_session_t *fsq_sessio
         sockaddr_cli.sin_addr = *((struct in_addr *)hostent->h_addr);
         sockaddr_cli.sin_port = htons(fsq_login->port);
 
-	CT_INFO("connecting to '%s:%d'", fsq_login->hostname, fsq_login->port);
+	LOG_INFO("connecting to '%s:%d'", fsq_login->hostname, fsq_login->port);
         rc = connect(fsq_session->fd,
 		     (struct sockaddr *)&sockaddr_cli,
                      sizeof(sockaddr_cli));
         if (rc < 0) {
                 rc = -errno;
-                CT_ERROR(rc, "connect");
+                LOG_ERROR(rc, "connect");
                 goto out;
         }
 
@@ -299,7 +299,7 @@ ssize_t fsq_fwrite(const void *ptr, size_t size, size_t nmemb,
 
 	bytes_written = write_size(fsq_session->fd, ptr,
 				   fsq_session->fsq_packet.fsq_data.size);
-	CT_DEBUG("[fd=%d] write size %zd, expected size %zd",
+	LOG_DEBUG("[fd=%d] write size %zd, expected size %zd",
 		 fsq_session->fd, bytes_written,
 		 __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ ?
 		 fsq_session->fsq_packet.fsq_data.size :

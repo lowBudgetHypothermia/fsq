@@ -210,7 +210,7 @@ void test_fsq_fcalls(CuTest *tc)
 			}
 
 			sprintf(fpath[r], "%s%s", LUSTRE_MOUNTP, fpath_rnd);
-			CT_DEBUG("fpath '%s'", fpath[r]);
+			LOG_DEBUG("fpath '%s'", fpath[r]);
 
 			rc = fsq_fdopen(LUSTRE_MOUNTP, fpath[r], NULL,
 					fsq_storage_dest, &fsq_session);
@@ -223,7 +223,7 @@ void test_fsq_fcalls(CuTest *tc)
 			memset(&fsq_info, 0, sizeof(fsq_info));
 			memcpy(&fsq_info, &fsq_session.fsq_packet.fsq_info, sizeof(fsq_info));
 
-			CT_INFO("fs: '%s', fpath: '%s', desc: '%s', storage dest: '%s'",
+			LOG_INFO("fs: '%s', fpath: '%s', desc: '%s', storage dest: '%s'",
 				fsq_info.fs, fsq_info.fpath, fsq_info.desc,
 				FSQ_STORAGE_DEST_STR(fsq_info.fsq_storage_dest));
 
@@ -250,7 +250,7 @@ void test_fsq_fcalls(CuTest *tc)
 				sprintf(fpath[r], "%s%s", fsq_storage_dest == FSQ_STORAGE_LOCAL ?
 					FSQ_MOUNTP : LUSTRE_MOUNTP, fpath_rnd);
 				rc = crc32file(fpath[r], &crc32sum_file);
-				CT_INFO("%s crc32 (0x%08x, 0x%08x) '%s'",
+				LOG_INFO("%s crc32 (0x%08x, 0x%08x) '%s'",
 					FSQ_STORAGE_DEST_STR(fsq_storage_dest),
 					crc32sum_buf, crc32sum_file, fpath[r]);
 				CuAssertIntEquals(tc, 0, rc);
