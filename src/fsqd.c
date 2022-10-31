@@ -585,7 +585,6 @@ static int enqueue_fsq_item(struct fsq_action_item_t *fsq_action_item)
 	rc = queue_enqueue(&queue, fsq_action_item);
 
 	if (rc) {
-		rc = -EFAILED;
 		LOG_ERROR(rc, "failed enqueue operation: "
 			 "%p, state '%s', fs '%s', fpath '%s', size %zu, "
 			 "errors %d, ts[0] %.3f, ts[1] %.3f, ts[2] %.3f, ts[3] %.3f, queue size %lu",
@@ -685,7 +684,6 @@ static int init_fsq_local(char *fpath_local, int *fd_local,
 			   fsq_session->fsq_packet.fsq_info.fs,
 			   hl, ll);
 	if (rc) {
-		rc = -EFAILED;
 		LOG_ERROR(rc, "extract_hl_ll");
 		return rc;
 	}
@@ -979,7 +977,7 @@ static void *thread_sock_client(void *arg)
 
 		/* Sanity check. */
 		if (bytes_recv_total != bytes_send_total) {
-			rc = -EFAILED;
+			rc = -EMSGSIZE;
 			LOG_ERROR(rc, "total number of bytes recv and send "
 				 "differs, recv: %lu and send: %lu",
 				 bytes_recv_total, bytes_send_total);
@@ -1716,7 +1714,6 @@ static void *thread_queue_consumer(void *data)
 		pthread_mutex_unlock(&queue_mutex);
 
 		if (rc) {
-			rc = -EFAILED;
 			LOG_ERROR(rc, "failed dequeue operation: "
 				 "%p, state '%s', fs '%s', fpath '%s', size %zu, "
 				 "errors %d, ts[0] %.3f, ts[1] %.3f, ts[2] %.3f, ts[3] %.3f, queue size %lu",

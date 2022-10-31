@@ -45,7 +45,6 @@
 	s == API_MSG_DEBUG  ? "debug"  :	      \
         s == API_MSG_MAX    ? "max"    : "UNKNOWN"    \
 
-#define EFAILED 0
 #define UNUSED(x) (void)(x)
 
 /* Bottom three bits reserved for api_message_level. */
