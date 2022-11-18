@@ -54,6 +54,7 @@ struct ident_map_t {
 	uint16_t archive_id;
 	uid_t uid;
 	gid_t gid;
+	char lustre_dpath[PATH_MAX + 1];
 };
 
 struct options {
@@ -186,9 +187,9 @@ static void print_ident(void *data)
 	struct ident_map_t *ident_map =
 		(struct ident_map_t *)data;
 	LOG_INFO("node: '%s', servername: '%s', archive_id: %d, "
-		"uid: %d, gid: %d",
+		"uid: %d, gid: %d, lustre_dpath '%s'",
 		ident_map->node, ident_map->servername, ident_map->archive_id,
-		ident_map->uid, ident_map->gid);
+		 ident_map->uid, ident_map->gid, ident_map->lustre_dpath);
 }
 
 static int parse_valid_num(const char *str, long int *val)
@@ -220,7 +221,6 @@ static int parse_line_ident(char *line, struct ident_map_t *ident_map)
 		strncpy(ident_map->node, token, sizeof(ident_map->node) - 1);
 		cnt_token++;
 	}
-
 	/* Parse servername. */
 	token = strtok_r(NULL, delim, &saveptr);
 	if (token && cnt_token++) {
@@ -251,9 +251,15 @@ static int parse_line_ident(char *line, struct ident_map_t *ident_map)
 			return -EINVAL;
 		ident_map->gid = (gid_t)val;
 	}
+	/* Parse lustre path. */
+	token = strtok_r(NULL, delim, &saveptr);
+	if (token && cnt_token++) {
+		strncpy(ident_map->lustre_dpath,
+			token, sizeof(ident_map->lustre_dpath) - 1);
+	}
 	/* Final verification. */
 	token = strtok_r(NULL, delim, &saveptr);
-	if (token || cnt_token != 5)
+	if (token || cnt_token != 6)
 		return -EINVAL;
 
 	return 0;
@@ -539,7 +545,8 @@ static int parseopts(int argc, char *argv[])
 static int identmap_entry(struct fsq_login_t *fsq_login,
 			  char *servername,
 			  int *archive_id,
-			  uid_t *uid, gid_t *gid)
+			  uid_t *uid, gid_t *gid,
+			  char *lustre_dpath)
 {
 	int rc = 0;
 
@@ -559,13 +566,14 @@ static int identmap_entry(struct fsq_login_t *fsq_login,
 	}
 	if (found) {
 		LOG_INFO("found node '%s' in identmap, using servername '%s', "
-			"archive_id %d, uid %d, gid %d", node->data,
+			"archive_id %d, uid %d, gid %d, lustre path '%s'", node->data,
 			ident_map->servername, ident_map->archive_id,
-			ident_map->uid, ident_map->gid);
+			 ident_map->uid, ident_map->gid, ident_map->lustre_dpath);
 		strncpy(servername, ident_map->servername, sizeof(ident_map->servername) + 0);
 		*archive_id = ident_map->archive_id;
 		*uid = ident_map->uid;
 		*gid = ident_map->gid;
+		strncpy(lustre_dpath, ident_map->lustre_dpath, sizeof(ident_map->lustre_dpath) + 0);
 	} else {
 		LOG_ERROR(0, "identifier mapping for node '%s' not found",
 			 fsq_login->node);
@@ -654,6 +662,62 @@ static struct fsq_action_item_t* create_fsq_item(const size_t bytes_recv_total,
 	return fsq_action_item;
 }
 
+static int write_access(struct fsq_session_t *fsq_session, char *lustre_dpath)
+{
+	const char *fpath = fsq_session->fsq_packet.fsq_info.fpath;
+	size_t L_lustre_dpath = strlen(lustre_dpath);
+	const size_t L_fpath = strlen(fpath);
+
+	/* File path name (fpath) cannot end with '/' */
+	if (fpath[L_fpath - 1] == '/') {
+		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
+			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
+			 "file path name '%s' cannot end with '/'",
+			 fpath);
+		fsq_session->fsq_packet.fsq_error.rc = -EINVAL;
+		return -EINVAL;
+	}
+
+	/* If Lustre directory path (lustre_dpath) does not end with '/',
+	   then we add one. */
+	if (lustre_dpath[L_lustre_dpath - 1] != '/' && L_lustre_dpath < PATH_MAX) {
+		lustre_dpath[L_lustre_dpath] = '/';
+		L_lustre_dpath++;
+	}
+	else {
+		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
+			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
+			 "Lustre directory path '%s' specified in identmap "
+			 "config file is too large", lustre_dpath);
+		fsq_session->fsq_packet.fsq_error.rc = -ENAMETOOLONG;
+		return -ENAMETOOLONG;
+	}
+
+	/* Length of fpath must be strictly greater than length of lustre_dpath.*/
+	if (L_lustre_dpath >= L_fpath) {
+		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
+			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
+			 "length of fpath '%s' must be strictly greater than length "
+			 "of lustre_dpath '%s'", fpath, lustre_dpath);
+		fsq_session->fsq_packet.fsq_error.rc = -EACCES;
+		return -EACCES;
+	}
+
+	/* File path name and Lustre directory name are matching
+	   up to the end of the Lustre directory name. */
+	for (size_t l = 0; l < L_lustre_dpath; l++) {
+		if (fpath[l] != lustre_dpath[l]) {
+			snprintf(fsq_session->fsq_packet.fsq_error.strerror,
+				 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
+				 "lustre_dpath '%s' is not a strict prefix of fpath '%s'",
+				 lustre_dpath, fpath);
+			fsq_session->fsq_packet.fsq_error.rc = -EACCES;
+			return -EACCES;
+		}
+	}
+
+	return 0;
+}
 
 static int init_fsq_dev_null(char *fpath_local, int *fd_local,
 			     const struct fsq_session_t *fsd_session)
@@ -814,7 +878,8 @@ out:
 }
 
 static int client_authenticate(struct fsq_session_t *fsq_session,
-			       int *archive_id, uid_t *uid, gid_t *gid)
+			       int *archive_id, uid_t *uid, gid_t *gid,
+			       char *lustre_dpath)
 {
 	int rc;
 	char servername[MAX_OPTIONS_LENGTH + 1] = {0};
@@ -826,7 +891,8 @@ static int client_authenticate(struct fsq_session_t *fsq_session,
 	/* Verify node exists in identmap file. */
 	rc = identmap_entry(&fsq_login,
 			    servername,
-			    archive_id, uid, gid);
+			    archive_id, uid, gid,
+			    lustre_dpath);
 	LOG_DEBUG("[rc=%d] identmap_entry", rc);
 	if (rc) {
 		LOG_ERROR(rc, "identmap_entry");
@@ -900,15 +966,16 @@ static void *thread_sock_client(void *arg)
 	uid_t uid = 65534;	/* User: Nobody. */
 	gid_t gid = 65534;	/* Group: Nobody. */
 	int archive_id = -1;
-	rc = client_authenticate(&fsq_session, &archive_id, &uid, &gid);
+	char lustre_dpath[PATH_MAX + 1] = {0};
+	rc = client_authenticate(&fsq_session, &archive_id, &uid, &gid, lustre_dpath);
 	if (rc) {
 		FSQ_ERROR(fsq_session, rc,
 			  "client_authenticate failed "
 			  "node: '%s', passwd: '%s', "
-			  "uid: %u, gid: %u",
+			  "uid: %u, gid: %u, lustrepath: '%s'",
 			  fsq_session.fsq_packet.fsq_login.node,
 			  fsq_session.fsq_packet.fsq_login.password,
-			  uid, gid);
+			  uid, gid, lustre_dpath);
 		rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
 		goto out;
 	}
@@ -951,6 +1018,14 @@ static void *thread_sock_client(void *arg)
 			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
 			goto out;
 		}
+
+		rc = write_access(&fsq_session, lustre_path);
+		if (rc) {
+			/* FSQ error field is filled inside write_access function. */
+			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
+			goto out;
+		}
+
 		rc = fsq_send(&fsq_session, FSQ_OPEN | FSQ_REPLY);
 		if (rc)
 			goto out;
