@@ -281,7 +281,8 @@ int main(int argc, char *argv[])
 
 	rc = fsq_fconnect(&fsq_login, &fsq_session);
 	if (rc) {
-		LOG_ERROR(rc, "fsq_connect failed");
+		LOG_ERROR(rc, "fsq_connect failed '%s'",
+			  fsq_session.fsq_packet.fsq_error.strerror);
 		return rc;
 	}
 
@@ -307,7 +308,8 @@ int main(int argc, char *argv[])
 	rc = fsq_fdopen(opt.o_fsname, opt.o_fpath, NULL, opt.o_storage_dest,
 			&fsq_session);
 	if (rc) {
-		LOG_ERROR(rc, "fsq_fdopen '%s'", opt.o_fpath);
+		LOG_ERROR(rc, "fsq_fdopen '%s' '%s'", opt.o_fpath,
+			  fsq_session.fsq_packet.fsq_error.strerror);
 		goto cleanup;
 	}
 
@@ -324,7 +326,9 @@ int main(int argc, char *argv[])
 			break;
 		rc = fsq_fwrite(buf, 1, size, &fsq_session);
 		if (rc < 0) {
-			LOG_ERROR(rc, "fsq_fwrite failed");
+			LOG_ERROR(rc, "fsq_fwrite failed '%s'",
+				  fsq_session.fsq_packet.fsq_error.strerror);
+
 			break;
 		}
 	} while (!feof(file));
