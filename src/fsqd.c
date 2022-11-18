@@ -967,7 +967,8 @@ static void *thread_sock_client(void *arg)
 	gid_t gid = 65534;	/* Group: Nobody. */
 	int archive_id = -1;
 	char lustre_dpath[PATH_MAX + 1] = {0};
-	rc = client_authenticate(&fsq_session, &archive_id, &uid, &gid, lustre_dpath);
+
+        rc = client_authenticate(&fsq_session, &archive_id, &uid, &gid, lustre_dpath);
 	if (rc) {
 		FSQ_ERROR(fsq_session, rc,
 			  "client_authenticate failed "
@@ -1019,7 +1020,7 @@ static void *thread_sock_client(void *arg)
 			goto out;
 		}
 
-		rc = write_access(&fsq_session, lustre_path);
+		rc = write_access(&fsq_session, lustre_dpath);
 		if (rc) {
 			/* FSQ error field is filled inside write_access function. */
 			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
