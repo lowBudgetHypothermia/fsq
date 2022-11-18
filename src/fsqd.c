@@ -566,7 +566,7 @@ static int identmap_entry(struct fsq_login_t *fsq_login,
 	}
 	if (found) {
 		LOG_INFO("found node '%s' in identmap, using servername '%s', "
-			"archive_id %d, uid %d, gid %d, lustre path '%s'", node->data,
+			"archive_id %d, uid %d, gid %d, lustre dpath '%s'", node->data,
 			ident_map->servername, ident_map->archive_id,
 			 ident_map->uid, ident_map->gid, ident_map->lustre_dpath);
 		strncpy(servername, ident_map->servername, sizeof(ident_map->servername) + 0);
@@ -972,7 +972,7 @@ static void *thread_sock_client(void *arg)
 		FSQ_ERROR(fsq_session, rc,
 			  "client_authenticate failed "
 			  "node: '%s', passwd: '%s', "
-			  "uid: %u, gid: %u, lustrepath: '%s'",
+			  "uid: %u, gid: %u, lustre dpath: '%s'",
 			  fsq_session.fsq_packet.fsq_login.node,
 			  fsq_session.fsq_packet.fsq_login.password,
 			  uid, gid, lustre_dpath);
