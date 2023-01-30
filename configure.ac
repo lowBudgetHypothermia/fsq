@@ -173,6 +173,11 @@ LDFLAGS="$LDFLAGS -Wl,--as-needed"
 # Halt on warnings.
 CFLAGS="$CFLAGS -Wall -Werror -fPIC"
 
+# Allow truncate writing when compiling with gcc, though not needed for clang.
+if test "$CC" = "gcc" ; then
+   CFLAGS="$CFLAGS -Werror=format-truncation=0"
+fi
+
 # For building packages we extract from tag X.Y.Z-R, version: X.Y.Z and release: R
 AC_SUBST(_VERSION, [m4_esyscmd([git describe --tags | cut -f1 -d"-"])])
 AC_SUBST(_RELEASE, [m4_esyscmd([git describe --tags | sed 's/-g[a-z0-9]\{7\}//' | sed -n -e '/^.*-/!{q100}; s/^.*-//p' || echo '1'])])

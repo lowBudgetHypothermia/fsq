@@ -34,8 +34,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <lustre/lustreapi.h>
-#include "ltsmapi.h"
 #include "fsqapi.h"
+#include "ltsmapi.h"
 #include "xattr.h"
 #include "queue.h"
 #include "util.h"
