@@ -64,32 +64,32 @@ if test "x$enable_fsqd" = "xyes"; then
 
   tsmheader="no"
   AC_CHECK_FILE("$TSM_SRC_DIR/dsmapitd.h", [tsmheader="yes"],
-		[AC_MSG_WARN([cannot find proprietary IBM TSM header files, use --with-tsm-headers=PATH])])
+		[AC_MSG_ERROR([cannot find proprietary IBM TSM header files, use --with-tsm-headers=PATH])])
   AS_IF([test "x$tsmheader" = "xyes"],
 	[
 	  # We found the required TSM header files, so let's check for TSM API library.
 	  AC_CHECK_LIB([ApiTSM64],
                        [dsmInitEx],
 		       [],
-		       [AC_MSG_WARN([cannot find proprietary IBM library ApiTSM64 required for , provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
+		       [AC_MSG_ERROR([cannot find proprietary IBM library ApiTSM64 required for , provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
                       )
 	]
        )
 
   # Path to LTSM header file directory.
   AC_ARG_WITH([ltsm-headers], AS_HELP_STRING([--with-ltsm-headers[=PATH]],[path to location of ltsmapi header files [default=/usr/include]]),
-	      LTSM_SRC_DIR="$withval", LTSM_SRC_DIR="/usr/include")
+	      LTSM_SRC_DIR="$withval", LTSM_SRC_DIR="/usr/include/ltsm")
 
   ltsmheader="no"
   AC_CHECK_FILE("$LTSM_SRC_DIR/ltsmapi.h", [ltsmheader="yes"],
-		[AC_MSG_WARN([cannot find ltsmapi header files, use --with-ltsm-headers=PATH])])
+		[AC_MSG_ERROR([cannot find ltsmapi header files, use --with-ltsm-headers=PATH])])
   AS_IF([test "x$ltsmheader" = "xyes"],
 	[
 	  # We found the required LTSM header file, so let's check for LTSM API library.
 	  AC_CHECK_LIB([ltsmapi],
                        [tsm_init],
 		       [],
-		       [AC_MSG_WARN([cannot find library ltsmapi, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
+		       [AC_MSG_ERROR([cannot find library ltsmapi, provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])]
                       )
 	]
        )
