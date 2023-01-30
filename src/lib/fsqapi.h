@@ -29,6 +29,9 @@
 #define FSQ_PROTOCOL_VER        1
 #define FSQ_PORT_DEFAULT        7625
 
+/* Length of fsq error message. */
+#define FSQ_MAX_ERRMSG_LENGTH 1024
+
 #define XATTR_FSQ_PREFIX	"user.fsq"
 #define XATTR_FSQ_STATE		XATTR_FSQ_PREFIX".state"
 #define XATTR_FSQ_ARCHIVE_ID	XATTR_FSQ_PREFIX".arvid"

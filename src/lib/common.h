@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright (c) 2019, GSI Helmholtz Centre for Heavy Ion Research
+ * Copyright (c) 2019-2023, GSI Helmholtz Centre for Heavy Ion Research
  */
 
 #ifndef COMMON_H
@@ -85,11 +85,6 @@
 /* Application type. */
 #ifndef DSM_MAX_PLATFORM_LENGTH
 #define DSM_MAX_PLATFORM_LENGTH 16
-#endif
-
-/* Length of fsq error message. */
-#ifndef FSQ_MAX_ERRMSG_LENGTH
-#define FSQ_MAX_ERRMSG_LENGTH 1024
 #endif
 
 #define OPTNCMP(str1, str2)				\
