@@ -1,3 +1,9 @@
+fsq (0.9.2-1) unstable; urgency=medium
+
+  * Fix critical bug in write_access function.
+
+ -- Thomas Stibor <thomas@stibor.net>  Tue, 21 Mar 2023 12:50:25 +0100
+
 fsq (0.9.2) unstable; urgency=low
 
   * Finalize remove from LTSM project

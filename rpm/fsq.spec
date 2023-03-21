@@ -60,6 +60,9 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Tue 21 Mar 2023 Thomas Stibor <t.stibor@gsi.de> 0.9.2-1
+- Fix critical bug in write_access function.
+
 * Tue Sep 20 2022 Thomas Stibor <t.stibor@gsi.de> 0.9.1-1
 - Build static and shared libraries
 - Package required header files
