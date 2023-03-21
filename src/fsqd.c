@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright (c) 2019-2022 GSI Helmholtz Centre for Heavy Ion Research
+ * Copyright (c) 2019-2023 GSI Helmholtz Centre for Heavy Ion Research
  */
 
 #ifndef _GNU_SOURCE
@@ -670,49 +670,47 @@ static int write_access(struct fsq_session_t *fsq_session, char *lustre_dpath)
 
 	/* File path name (fpath) cannot end with '/' */
 	if (fpath[L_fpath - 1] == '/') {
-		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
-			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
-			 "file path name '%s' cannot end with '/'",
-			 fpath);
-		fsq_session->fsq_packet.fsq_error.rc = -EINVAL;
-		return -EINVAL;
+		int rc = -EINVAL;
+		FSQ_ERROR(*fsq_session, rc, "file path name '%s' cannot end with '/'", fpath);
+		return rc;
+	}
+
+	if (L_lustre_dpath >= PATH_MAX - 1) {
+		int rc = -ENAMETOOLONG;
+		FSQ_ERROR(*fsq_session, rc, "Lustre directory path '%s' specified in identmap "
+			 "config file is too large", lustre_dpath);
+		return rc;
 	}
 
 	/* If Lustre directory path (lustre_dpath) does not end with '/',
 	   then we add one. */
-	if (lustre_dpath[L_lustre_dpath - 1] != '/' && L_lustre_dpath < PATH_MAX) {
+	LOG_DEBUG("lustre_dpath '%s'", lustre_dpath);
+	if (lustre_dpath[L_lustre_dpath - 1] != '/') {
 		lustre_dpath[L_lustre_dpath] = '/';
-		L_lustre_dpath++;
-	}
-	else {
-		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
-			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
-			 "Lustre directory path '%s' specified in identmap "
-			 "config file is too large", lustre_dpath);
-		fsq_session->fsq_packet.fsq_error.rc = -ENAMETOOLONG;
-		return -ENAMETOOLONG;
+		lustre_dpath[++L_lustre_dpath] = '\0';
+		LOG_INFO("appended '/' to lustre_dpath '%s'", lustre_dpath);
 	}
 
 	/* Length of fpath must be strictly greater than length of lustre_dpath.*/
 	if (L_lustre_dpath >= L_fpath) {
-		snprintf(fsq_session->fsq_packet.fsq_error.strerror,
-			 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
-			 "length of fpath '%s' must be strictly greater than length "
-			 "of lustre_dpath '%s'", fpath, lustre_dpath);
-		fsq_session->fsq_packet.fsq_error.rc = -EACCES;
-		return -EACCES;
+		int rc = -EACCES;
+		FSQ_ERROR(*fsq_session, rc,
+			  "length of fpath '%s' must be strictly greater than length "
+			  "of lustre_dpath '%s'", fpath, lustre_dpath);
+		return rc;
 	}
 
 	/* File path name and Lustre directory name are matching
 	   up to the end of the Lustre directory name. */
+	LOG_DEBUG("verify lustre_dpath '%s' is a strict prefix of fpath '%s'",
+		  lustre_dpath, fpath);
 	for (size_t l = 0; l < L_lustre_dpath; l++) {
 		if (fpath[l] != lustre_dpath[l]) {
-			snprintf(fsq_session->fsq_packet.fsq_error.strerror,
-				 sizeof(fsq_session->fsq_packet.fsq_error.strerror),
-				 "lustre_dpath '%s' is not a strict prefix of fpath '%s'",
-				 lustre_dpath, fpath);
-			fsq_session->fsq_packet.fsq_error.rc = -EACCES;
-			return -EACCES;
+			int rc = -EACCES;
+			FSQ_ERROR(*fsq_session, rc,
+				  "lustre_dpath '%s' is not a strict prefix of fpath '%s'",
+				  lustre_dpath, fpath);
+			return rc;
 		}
 	}
 
@@ -820,7 +818,7 @@ static int fsq_recv_data(int *fd_local, struct fsq_session_t *fsq_session,
 			 FSQ_PROTOCOL_STR(fsq_session->fsq_packet.state),
 			 fsq_session->fsq_packet.fsq_data.size);
 		if (rc) {
-			FSQ_ERROR((*fsq_session), rc, "fsq_recv failed");
+			FSQ_ERROR(*fsq_session, rc, "fsq_recv failed");
 			goto out;
 		}
 
@@ -841,7 +839,7 @@ static int fsq_recv_data(int *fd_local, struct fsq_session_t *fsq_session,
 				 fsq_session->fd, bytes_recv, bytes_to_recv, sizeof(buf));
 			if (bytes_recv < 0) {
 				rc = -errno;
-				FSQ_ERROR((*fsq_session), rc, "read_size error");
+				FSQ_ERROR(*fsq_session, rc, "read_size error");
 				goto out;
 			}
 			if (bytes_recv == 0) {
@@ -857,7 +855,7 @@ static int fsq_recv_data(int *fd_local, struct fsq_session_t *fsq_session,
 				 *fd_local, bytes_send, bytes_recv, sizeof(buf));
 			if (bytes_send < 0) {
 				rc = -errno;
-				FSQ_ERROR((*fsq_session), rc, "write_size error");
+				FSQ_ERROR(*fsq_session, rc, "write_size error");
 				goto out;
 			}
 			*bytes_send_total += bytes_send;

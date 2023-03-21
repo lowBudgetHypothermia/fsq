@@ -78,8 +78,8 @@
 
 #define FSQ_ERROR(fsq_session, rc, ...)				\
 do {								\
-	fsq_session.fsq_packet.fsq_error.rc = rc;		\
-	snprintf(fsq_session.fsq_packet.fsq_error.strerror,	\
+	(fsq_session).fsq_packet.fsq_error.rc = rc;		\
+	snprintf((fsq_session).fsq_packet.fsq_error.strerror,	\
 		 FSQ_MAX_ERRMSG_LENGTH, __VA_ARGS__);		\
 	LOG_ERROR(rc, __VA_ARGS__);				\
 } while (0);
