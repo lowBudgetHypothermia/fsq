@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright (c) 2022, GSI Helmholtz Centre for Heavy Ion Research
+ * Copyright (c) 2023, GSI Helmholtz Centre for Heavy Ion Research
  */
 
 #define _GNU_SOURCE
@@ -40,9 +40,7 @@ struct options {
 	char	o_password[DSM_MAX_VERIFIER_LENGTH + 1];
 	char	o_fsname[DSM_MAX_FSNAME_LENGTH + 1];
 	char	o_fpath[PATH_MAX + 1];
-	char	o_filename[PATH_MAX + 1];
 	int	o_storage_dest;
-	int     o_pipe;
 };
 
 static struct options opt = {
@@ -52,7 +50,6 @@ static struct options opt = {
 	.o_password	  = {0},
 	.o_fsname	  = {0},
 	.o_fpath	  = {0},
-	.o_filename	  = {0},
 	.o_storage_dest   = FSQ_STORAGE_NULL
 };
 
@@ -60,10 +57,8 @@ static void usage(const char *cmd_name, const int rc)
 {
 	fprintf(stdout,
 		"usage: %s [options] <file>\n"
-		"\t--pipe\n"
 		"\t-f, --fsname <string>\n"
 		"\t-a, --fpath <string>\n"
-		"\t-l, --filename <string>\n"
 		"\t-o, --storagedest {null, local, lustre, tsm, lustre_tsm} [default: %s] \n"
 		"\t-n, --node <string>\n"
 		"\t-p, --password <string>\n"
@@ -71,7 +66,7 @@ static void usage(const char *cmd_name, const int rc)
 		"\t-v, --verbose {error, warn, message, info, debug} [default: %s]\n"
 		"\t-h, --help\n"
 		"version: %s, fsq protocol version: %s "
-		"© 2022 by GSI Helmholtz Centre for Heavy Ion Research\n",
+		"© 2023 by GSI Helmholtz Centre for Heavy Ion Research\n",
 		cmd_name,
 		FSQ_STORAGE_DEST_HUMAN_STR(opt.o_storage_dest),
 		LOG_LEVEL_HUMAN_STR(opt.o_verbose),
@@ -120,12 +115,6 @@ static void sanity_arg_check(const char *argv)
 			"<string>\n\n");
 		usage(argv, -EINVAL);
 	}
-	if (opt.o_filename[0] && strchr(opt.o_filename, '/')) {
-		fprintf(stderr, "argument -l, --filename '%s' contains "
-			"illegal character(s) '/'\n\n",
-			opt.o_filename);
-		usage(argv, -EINVAL);
-	}
 	if (opt.o_fsname[0] && opt.o_fpath[0]) {
 		if (is_path_prefix(opt.o_fsname, opt.o_fpath)) {
 			fprintf(stderr, "argument -f, --fsname '%s' is not a "
@@ -141,18 +130,16 @@ static int parseopts(int argc, char *argv[])
 	struct option long_opts[] = {
 		{.name = "fsname",	.has_arg = required_argument, .flag = NULL,        .val = 'f'},
 		{.name = "fpath",	.has_arg = required_argument, .flag = NULL,        .val = 'a'},
-		{.name = "filename",	.has_arg = required_argument, .flag = NULL,        .val = 'l'},
 		{.name = "storagedest",	.has_arg = required_argument, .flag = NULL,        .val = 'o'},
 		{.name = "node",	.has_arg = required_argument, .flag = NULL,        .val = 'n'},
 		{.name = "password",	.has_arg = required_argument, .flag = NULL,        .val = 'p'},
 		{.name = "servername",	.has_arg = required_argument, .flag = NULL,        .val = 's'},
 		{.name = "verbose",	.has_arg = required_argument, .flag = NULL,        .val = 'v'},
-		{.name = "pipe",        .has_arg = no_argument,       .flag = &opt.o_pipe, .val = 1},
 		{.name = "help",	.has_arg = no_argument,       .flag = NULL,        .val = 'h'},
 		{0, 0, 0, 0}
 	};
 	int c;
-	while ((c = getopt_long(argc, argv, "f:a:l:o:n:p:s:v:h",
+	while ((c = getopt_long(argc, argv, "f:a:o:n:p:s:v:h",
 				long_opts, NULL)) != -1) {
 		switch (c) {
 		case 'f': {
@@ -161,10 +148,6 @@ static int parseopts(int argc, char *argv[])
 		}
 		case 'a': {
 			strncpy(opt.o_fpath, optarg, PATH_MAX);
-			break;
-		}
-		case 'l': {
-			strncpy(opt.o_filename, optarg, PATH_MAX);
 			break;
 		}
 		case 'o': {
@@ -246,26 +229,18 @@ int main(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	FILE *file = NULL;
-	const char *filename = NULL;
+	size_t num_files_dirs = 0;
+	char **files_dirs_arg = NULL;
 
-	/* Argument <file> is provided. */
-	if (argc - optind == 1) {
-		/* Argument --pipe is provided and results in exclusionary parameters. */
-		if (opt.o_pipe) {
-			fprintf(stdout, "error two exclusionary parameters --pipe and <file>\n\n");
-			usage(argv[0], -EINVAL);
-		} else
-			filename = argv[argc - 1];
-	} else {
-		if (opt.o_filename[0] && opt.o_pipe && argc - optind == 0)
-			file = stdin;
-		else if (!opt.o_filename[0] && opt.o_pipe && argc - optind == 0) {
-			fprintf(stderr, "missing argument -l, --filename <filename>\n\n");
-			usage(argv[0], -EINVAL);
-		} else {
-			fprintf(stderr, "missing or incorrect number of arguments\n\n");
-			usage(argv[0], -EINVAL);
+	if (optind < argc) {
+		size_t i = 0;
+		num_files_dirs = argc - optind;
+		files_dirs_arg = malloc(sizeof(char *) * num_files_dirs);
+		while (optind < argc) {
+			size_t len = strlen(argv[optind]);
+			files_dirs_arg[i] = calloc(len + 1, sizeof(char));
+			(files_dirs_arg[i])[len] = '\0';
+			strncpy(files_dirs_arg[i++], argv[optind++], len);
 		}
 	}
 
@@ -286,66 +261,95 @@ int main(int argc, char *argv[])
 		return rc;
 	}
 
-	/* Argument <file> is provided and not stdin (--pipe). */
-	if (!file) {
-		file = fopen(filename, "rb");
-		if (!file) {
-			rc = -errno;
-			LOG_ERROR(rc, "fopen '%s' failed", filename);
-			goto cleanup;
-		}
-	}
-
-	if (opt.o_filename[0])
-		filename = opt.o_filename;
-
 	const size_t l = strlen(opt.o_fpath);
 	if (opt.o_fpath[l - 1] != '/')
 		opt.o_fpath[l] = '/';
 
-	strncat(opt.o_fpath, basename(filename), PATH_MAX);
+	for (size_t i = 0; i < num_files_dirs && files_dirs_arg[i]; i++) {
 
-	rc = fsq_fdopen(opt.o_fsname, opt.o_fpath, NULL, opt.o_storage_dest,
-			&fsq_session);
-	if (rc) {
-		LOG_ERROR(rc, "fsq_fdopen '%s' '%s'", opt.o_fpath,
-			  fsq_session.fsq_packet.fsq_error.strerror);
-		goto cleanup;
+		char fpath[PATH_MAX + 1] = { 0 };
+		strncpy(fpath, opt.o_fpath, PATH_MAX);
+		strncat(fpath, basename(files_dirs_arg[i]), PATH_MAX);
+
+		rc = fsq_fdopen(opt.o_fsname, fpath, NULL, opt.o_storage_dest,
+				&fsq_session);
+		if (rc) {
+			LOG_ERROR(rc, "fsq_fdopen '%s' '%s'", fsq_session.fsq_packet.fsq_info.fpath,
+				  fsq_session.fsq_packet.fsq_error.strerror);
+			goto cleanup;
+		}
+
+		FILE *file = NULL;
+		file = fopen(files_dirs_arg[i], "rb");
+		if (!file) {
+			rc = -errno;
+			LOG_ERROR(rc, "fopen '%s' failed", files_dirs_arg[i]);
+			goto cleanup;
+		}
+
+		char buf[BUF_LENGTH] = {0};
+		ssize_t size_read = 0;
+		ssize_t size_written = 0;
+		ssize_t size_total_read = 0;
+		ssize_t size_total_written = 0;
+
+		do {
+			size_read = fread(buf, 1, BUF_LENGTH, file);
+			if (ferror(file)) {
+				rc = -EIO;
+				LOG_ERROR(rc, "fread failed");
+				break;
+			}
+			if (size_read == 0)
+				break;
+			size_written = fsq_fwrite(buf, 1, size_read, &fsq_session);
+			if (size_written < 0) {
+				rc = fsq_session.fsq_packet.fsq_error.rc;
+				LOG_ERROR(rc, "fsq_fwrite failed '%s'",
+					  fsq_session.fsq_packet.fsq_error.strerror);
+				break;
+			}
+			size_total_read += size_read;
+			size_total_written += size_written;
+		} while (!feof(file));
+
+		if (file)
+			fclose(file);
+
+		if (size_total_read != size_total_written) {
+			rc = -EPROTO;
+			LOG_ERROR(rc, "total size fread %lu and fsq_fwrite %lu mismatch '%s'",
+				  size_total_read, size_total_written,
+				  fsq_session.fsq_packet.fsq_info.fpath);
+			goto cleanup;
+		}
+
+		rc = fsq_fclose(&fsq_session);
+		if (rc) {
+			LOG_ERROR(rc, "fsq_fclose '%s' '%s'", fsq_session.fsq_packet.fsq_info.fpath,
+				  fsq_session.fsq_packet.fsq_error.strerror);
+			goto cleanup;
+		}
+
+                if (rc) {
+			LOG_ERROR(rc, "failed sending file '%s' with fpath '%s' to FSQ server '%s'",
+				  files_dirs_arg[i], fpath, opt.o_servername);
+		} else {
+			LOG_MESSAGE("successfully sent file '%s' with fpath '%s' to FSQ server '%s'",
+				    files_dirs_arg[i], fpath, opt.o_servername);
+		}
 	}
 
-	char buf[BUF_LENGTH] = {0};
-	ssize_t size;
-	do {
-		size = fread(buf, 1, BUF_LENGTH, file);
-		if (ferror(file)) {
-			rc = -EIO;
-			LOG_ERROR(rc, "fread failed");
-			break;
-		}
-		if (size == 0)
-			break;
-		rc = fsq_fwrite(buf, 1, size, &fsq_session);
-		if (rc < 0) {
-			LOG_ERROR(rc, "fsq_fwrite failed '%s'",
-				  fsq_session.fsq_packet.fsq_error.strerror);
-
-			break;
-		}
-	} while (!feof(file));
-
 cleanup:
-	if (file)
-		fclose(file);
-	rc = fsq_fclose(&fsq_session);
 	fsq_fdisconnect(&fsq_session);
 
-	if (rc)
-		LOG_ERROR(rc, "failed sending file '%s' with fpath '%s' to FSQ server '%s'\n",
-			 filename, opt.o_fpath, opt.o_servername);
+	if (rc) {
+		LOG_ERROR(rc, "failed sending fpath '%s' to FSQ server '%s'",
+			  opt.o_fpath, opt.o_servername);
+	}
 
-	else
-		LOG_MESSAGE("successfully sent file '%s' with fpath '%s' to FSQ server '%s'\n",
-			   filename, opt.o_fpath, opt.o_servername);
+	if (files_dirs_arg)
+		free(files_dirs_arg);
 
 	return rc;
 }
