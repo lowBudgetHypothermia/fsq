@@ -61,6 +61,7 @@ MAINTAINERCLEANFILES += man/Makefile.in
 MAINTAINERCLEANFILES += src/Makefile.in
 MAINTAINERCLEANFILES += src/lib/Makefile.in
 MAINTAINERCLEANFILES += src/test/Makefile.in
+MAINTAINERCLEANFILES += src/benchmark/Makefile.in
 MAINTAINERCLEANFILES += m4/libtool.m4
 MAINTAINERCLEANFILES += m4/ltoptions.m4
 MAINTAINERCLEANFILES += m4/ltsugar.m4

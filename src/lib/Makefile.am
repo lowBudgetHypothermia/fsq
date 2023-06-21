@@ -4,6 +4,10 @@ if BUILD_FSQD
     libfsqapi_la_SOURCES += xattr.c
 endif
 
+if BUILD_BENCHMARK
+    libfsqapi_la_SOURCES += util.c
+endif
+
 pkginclude_HEADERS = fsqapi.h common.h log.h
 noinst_HEADERS = xattr.h list.h queue.h chashtable.h qtable.h measurement.h util.h
 

@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright (c) 2022, GSI Helmholtz Centre for Heavy Ion Research
+ * Copyright (c) 2022 - 2023, GSI Helmholtz Centre for Heavy Ion Research
  */
 
 #define _GNU_SOURCE

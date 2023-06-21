@@ -60,6 +60,9 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Wed 21 Jun 2023 Thomas Stibor <t.stibor@gsi.de> 0.9.3-1
+- Build fsqbench via separate --enable-benchmark flag.
+
 * Thu 18 May 2023 Thomas Stibor <t.stibor@gsi.de> 0.9.2-2
 - Enable sending multiple files within one session in fsqc.
 

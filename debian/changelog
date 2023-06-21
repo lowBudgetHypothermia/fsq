@@ -1,3 +1,9 @@
+fsq (0.9.3) unstable; urgency=medium
+
+  * Build fsqbench via separate --enable-benchmark flag.
+
+ -- Thomas Stibor <t.stibor@gsi.de>  Wed, 21 Jun 2023 13:48:23 +0200
+
 fsq (0.9.2-2) unstable; urgency=medium
 
   * Enable sending multiple files within one session in fsqc.

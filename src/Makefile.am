@@ -1,7 +1,11 @@
 SUBDIRS = lib
 
-if TESTS
+if BUILD_TESTS
     SUBDIRS += test
+endif
+
+if BUILD_BENCHMARK
+    SUBDIRS += benchmark
 endif
 
 AUTOMAKE_OPTIONS = subdir-objects

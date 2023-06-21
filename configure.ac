@@ -125,9 +125,8 @@ AC_SEARCH_LIBS(pthread_create, pthread)
 #  Default-disabled tests.
 AC_ARG_ENABLE([tests],
               AS_HELP_STRING([--enable-tests], [enable and build tests]))
-AM_CONDITIONAL([TESTS], [test "x$enable_tests" = "xyes"])
+AM_CONDITIONAL([BUILD_TESTS], [test "x$enable_tests" = "xyes"])
 
-# enable_tests="no"
 # Tests can be build only when building fsqd.
 AS_IF([test "x$enable_tests" = "xyes" && test "x$build_fsqd" = "xno"],
       [AC_MSG_ERROR([cannot build tests without fsqd, use --enable-fsqd and --enable-tests together])])
@@ -137,6 +136,21 @@ if test "x$enable_tests" = "xyes"; then
     AC_DEFINE([WITH_MEASUREMENT], [1], [define if enabling tests])
 else
     enable_tests="no"
+fi
+
+# Default-disabled benchmark.
+AC_ARG_ENABLE([benchmark],
+              AS_HELP_STRING([--enable-benchmark], [enable and build benchmark]))
+AM_CONDITIONAL([BUILD_BENCHMARK], [test "x$enable_benchmark" = "xyes"])
+
+# Enable measurements when benchmark is enabled.
+if test "x$enable_benchmark" = "xyes"; then
+     # Check for required zlib library.
+       AC_CHECK_LIB([z], [crc32], [], [AC_MSG_ERROR([cannot find library zlib required for fsqbench, install zlib package or provide library path e.g. ./configure LDFLAGS='-L/<PATH_TO_LIB> -Wl,-rpath,<PATH_TO_LIB>'])])
+
+    AC_DEFINE([WITH_MEASUREMENT], [1], [define if enabling benchmark])
+else
+    enable_benchmark="no"
 fi
 
 # Propage flags and dirs among final Makefiles.
@@ -165,6 +179,7 @@ AC_CONFIG_FILES([Makefile
                  src/Makefile
                  src/lib/Makefile
 		 src/test/Makefile
+		 src/benchmark/Makefile
 		 man/Makefile])
 
 # Remove unneeded libraries.
@@ -190,4 +205,5 @@ echo
 echo "build fsqc and fsqapi library : yes"
 echo "build fsqd                    : ${build_fsqd}"
 echo "build test suite              : ${enable_tests}"
+echo "build benchmark               : ${enable_benchmark}"
 echo
