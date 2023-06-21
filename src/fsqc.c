@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
 	for (size_t i = 0; i < num_files_dirs && files_dirs_arg[i]; i++) {
 
 		char fpath[PATH_MAX + 1] = { 0 };
-		strncpy(fpath, opt.o_fpath, PATH_MAX);
+		strncpy(fpath, opt.o_fpath, PATH_MAX + 1);
 		strncat(fpath, basename(files_dirs_arg[i]), PATH_MAX);
 
 		rc = fsq_fdopen(opt.o_fsname, fpath, NULL, opt.o_storage_dest,
