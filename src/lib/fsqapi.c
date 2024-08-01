@@ -13,7 +13,7 @@
  */
 
 /*
- * Copyright (c) 2019-2022, GSI Helmholtz Centre for Heavy Ion Research
+ * Copyright (c) 2019-2024, GSI Helmholtz Centre for Heavy Ion Research
  */
 
 #include <string.h>
@@ -167,38 +167,83 @@ int fsq_init(struct fsq_login_t *fsq_login,
 int fsq_fconnect(struct fsq_login_t *fsq_login, struct fsq_session_t *fsq_session)
 {
 	int rc;
-        struct sockaddr_in sockaddr_cli;
-	struct hostent *hostent;
+	struct addrinfo hints, *result, *rp;
+	char port[6] = { 0 };
+	char ipstr[INET6_ADDRSTRLEN] = { 0 };
 
-	hostent = gethostbyname(fsq_login->hostname);
-	if (!hostent) {
-		rc = -h_errno;
-		LOG_ERROR(rc, "%s", hstrerror(h_errno));
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC; /* Allow IPv4 or IPv6. */
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = 0;	/* Any protocol. */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	snprintf(port, sizeof(port), "%d", fsq_login->port);
+	rc = getaddrinfo(fsq_login->hostname, port, &hints, &result);
+	if (rc) {
+		LOG_ERROR(0, "getaddrinfo '%s:%s' failed: %s",
+			  fsq_login->hostname, port,
+			  gai_strerror(rc));
+		rc = -errno;
 		goto out;
 	}
 
-        /* Create communication endpoint to FSQ server. */
-        fsq_session->fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (fsq_session->fd < 0) {
-                rc = -errno;
-                LOG_ERROR(rc, "socket");
-                goto out;
-        }
+	/* The call getaddrinfo() returns a list of address structures.
+	   Try each address until we successfully connect(). */
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
 
-        memset(&sockaddr_cli, 0, sizeof(sockaddr_cli));
-        sockaddr_cli.sin_family = AF_INET;
-        sockaddr_cli.sin_addr = *((struct in_addr *)hostent->h_addr);
-        sockaddr_cli.sin_port = htons(fsq_login->port);
+		void *addr;
+		char *ipver;
 
-	LOG_INFO("connecting to '%s:%d'", fsq_login->hostname, fsq_login->port);
-        rc = connect(fsq_session->fd,
-		     (struct sockaddr *)&sockaddr_cli,
-                     sizeof(sockaddr_cli));
-        if (rc < 0) {
-                rc = -errno;
-                LOG_ERROR(rc, "connect");
-                goto out;
-        }
+		/* Obtain IP information on address and v4 or v6 for later usage. */
+		if (rp->ai_family == AF_INET) {
+			struct sockaddr_in *ipv4 = (struct sockaddr_in *)rp->ai_addr;
+			addr = &(ipv4->sin_addr);
+			ipver = "IPv4";
+		} else {
+			struct sockaddr_in6 *ipv6 = (struct sockaddr_in6 *)rp->ai_addr;
+			addr = &(ipv6->sin6_addr);
+			ipver = "IPv6";
+		}
+		inet_ntop(rp->ai_family, addr, ipstr, sizeof(ipstr));
+
+		fsq_session->fd = socket(rp->ai_family,
+					 rp->ai_socktype, rp->ai_protocol);
+
+		/* Try next address. */
+		if (fsq_session->fd < 0) {
+			rc = -errno;
+			LOG_ERROR(rc, "socket %s:%s, try next address", ipver, ipstr);
+			continue;
+		}
+
+		rc = connect(fsq_session->fd, rp->ai_addr, rp->ai_addrlen);
+		if (!rc) {
+			LOG_INFO("connecting to %s:%s '%s:%d'", ipver, ipstr,
+				 fsq_login->hostname, fsq_login->port);
+			break;	/* Success. */
+		}
+
+		rc = -errno;
+		if (rp->ai_family == AF_INET6)
+			LOG_INFO("connect using address %s:%s failed, %s, try next address",
+				 ipver, ipstr, strerror(-rc));
+		else
+			LOG_ERROR(rc, "connect using address %s:%s failed, try next address",
+				  ipver, ipstr);
+		close(fsq_session->fd);
+		fsq_session->fd = -1;
+	}
+	freeaddrinfo(result);
+
+	/* No address succeeded. */
+	if (rp == NULL || fsq_session->fd == -1) {
+		if (!rc)
+			rc = -EADDRNOTAVAIL;
+		goto out;
+	}
 
 	memcpy(&fsq_session->fsq_packet.fsq_login,
 	       fsq_login, sizeof(struct fsq_login_t));
