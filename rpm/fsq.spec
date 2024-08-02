@@ -60,6 +60,9 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Fri 2 Aug 2024 Thomas Stibor <t.stibor@gsi.de> 0.9.4-1
+- Support for IPv6.
+
 * Wed 21 Jun 2023 Thomas Stibor <t.stibor@gsi.de> 0.9.3-1
 - Build fsqbench via separate --enable-benchmark flag.
 

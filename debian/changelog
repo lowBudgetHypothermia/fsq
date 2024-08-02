@@ -1,3 +1,9 @@
+fsq (0.9.4) unstable; urgency=medium
+
+  * Support for IPv6.
+
+ -- Thomas Stibor <t.stibor@gsi.de>  Fri, 02 Aug 2024 11:19:16 +0200
+
 fsq (0.9.3) unstable; urgency=medium
 
   * Build fsqbench via separate --enable-benchmark flag.
