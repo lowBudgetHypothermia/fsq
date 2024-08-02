@@ -137,14 +137,14 @@ static int listen_socket_srv(int port)
 	int rc;
 	int sock_fd = -1;
 	int reuse = 1;
-	struct sockaddr_in sockaddr_srv;
+	struct sockaddr_in6 sockaddr_srv;
 
 	memset(&sockaddr_srv, 0, sizeof(sockaddr_srv));
-	sockaddr_srv.sin_family	     = AF_INET;
-	sockaddr_srv.sin_addr.s_addr = htonl(INADDR_ANY);
-	sockaddr_srv.sin_port	     = htons(port);
+	sockaddr_srv.sin6_family = AF_INET6;
+	sockaddr_srv.sin6_addr = in6addr_any;
+	sockaddr_srv.sin6_port = htons(port);
 
-	sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+	sock_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (sock_fd < 0) {
 		rc = -errno;
 		LOG_ERROR(rc, "socket");
@@ -1934,7 +1934,7 @@ int main(int argc, char *argv[])
 	while (keep_running) {
 
 		int fd;
-		struct sockaddr_in sockaddr_cli;
+		struct sockaddr_in6 sockaddr_cli;
 		socklen_t addrlen;
 
 		memset(&sockaddr_cli, 0, sizeof(sockaddr_cli));
@@ -1961,19 +1961,23 @@ int main(int argc, char *argv[])
 			}
 			*fd_sock = fd;
 
+			/* Note that if the client is an IPv4 client,
+			   the address will be shown as an IPv4 mapped IPv6 address. */
+			char ipstr[INET6_ADDRSTRLEN] = { 0 };
+			inet_ntop(AF_INET6, &sockaddr_cli.sin6_addr, ipstr, sizeof(ipstr));
+
 			pthread_mutex_lock(&mutex_sock_cnt);
 			rc = pthread_create(&threads_sock[thread_sock_cnt], &attr,
 					    thread_sock_client, fd_sock);
 			if (rc != 0)
 				LOG_ERROR(rc, "cannot create thread for "
-					 "client '%s'",
-					 inet_ntoa(sockaddr_cli.sin_addr));
+					  "client '%s'", ipstr);
 			else {
 				LOG_MESSAGE("created socket thread 'fsq_sock/%d' for "
-					   "client '%s' and fd %d",
-					   thread_sock_cnt,
-					   inet_ntoa(sockaddr_cli.sin_addr),
-					   *fd_sock);
+					    "client '%s' and fd %d",
+					    thread_sock_cnt,
+					    ipstr,
+					    *fd_sock);
 				thread_sock_cnt++;
 			}
 			pthread_mutex_unlock(&mutex_sock_cnt);
