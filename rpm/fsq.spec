@@ -26,8 +26,8 @@ is provided for sending data to the file storage queue server via console comman
 %autosetup -n %{name}-%{version}-%{release}
 
 %build
-./configure %{?configure_flags} --mandir=%{_mandir} --libdir=%{_libdir} --bindir=%{_bindir} --sbindir=%{_sbindir} --enable-fsqd
-make %{?_smp_mflags}
+%configure --enable-fsqd
+%make_build
 
 %install
 rm -rf %{buildroot}
