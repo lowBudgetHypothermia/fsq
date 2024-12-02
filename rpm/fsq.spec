@@ -41,7 +41,9 @@ install -m 600 debian/fsqd.default %{buildroot}/%{_etcdir}/default/fsqd
 %files
 %defattr(-,root,root)
 %{_mandir}/man1/fsqd.1.*
+%{_includedir}/fsq/*.h
 %{_bindir}/fsqc
+%{_libdir}/libfsqapi.*
 %{_sbindir}/fsqd
 %{_unitdir}/%{name}.fsqd.service
 %{_etcdir}/default/fsqd
