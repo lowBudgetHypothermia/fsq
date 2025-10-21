@@ -700,12 +700,17 @@ static int write_access(struct fsq_session_t *fsq_session, char *lustre_dpath)
 		return rc;
 	}
 
-	/* File path name and Lustre directory name are matching
-	   up to the end of the Lustre directory name. */
+	/* Resolve path to absolute path */
+	char buf[PATH_MAX];
+	char *output = realpath(fpath, buf);
+	LOG_DEBUG("fpath: '%s', realpath output: '%s', buf: '%s'", fpath, output, buf);
+
+	/* Resolved file path name and Lustre directory name are
+       matching up to the end of the Lustre directory name. */
 	LOG_DEBUG("verify lustre_dpath '%s' is a strict prefix of fpath '%s'",
 		  lustre_dpath, fpath);
 	for (size_t l = 0; l < L_lustre_dpath; l++) {
-		if (fpath[l] != lustre_dpath[l]) {
+		if (buf[l] != lustre_dpath[l]) {
 			int rc = -EACCES;
 			FSQ_ERROR(*fsq_session, rc,
 				  "lustre_dpath '%s' is not a strict prefix of fpath '%s'",
@@ -1008,19 +1013,19 @@ static void *thread_sock_client(void *arg)
 		if (fsq_session.fsq_packet.state & FSQ_DISCONNECT)
 			goto out;
 
+		rc = write_access(&fsq_session, lustre_dpath);
+		if (rc) {
+			/* FSQ error field is filled inside write_access function. */
+			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
+			goto out;
+		}
+
 		rc = init_fsq_storage(fpath_local, &fd_local, &fsq_session);
 		if (rc) {
 			FSQ_ERROR(fsq_session, rc,
 				  "init_fsq_storage failed '%s'",
 				  FSQ_STORAGE_DEST_STR(
 					  fsq_session.fsq_packet.fsq_info.fsq_storage_dest));
-			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
-			goto out;
-		}
-
-		rc = write_access(&fsq_session, lustre_dpath);
-		if (rc) {
-			/* FSQ error field is filled inside write_access function. */
 			rc = fsq_send(&fsq_session, FSQ_ERROR | FSQ_REPLY);
 			goto out;
 		}
