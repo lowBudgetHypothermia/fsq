@@ -62,6 +62,9 @@ rm -rf %{buildroot}
 
 %changelog
 
+* Tue 21 Oct 2025 Samuel Hasert <s.hasert@gsi.de> 0.9.5
+- Absolute file path resolution to prevent path traversal exploit.
+
 * Fri 2 Aug 2024 Thomas Stibor <t.stibor@gsi.de> 0.9.4-1
 - Support for IPv6.
 
